@@ -1,0 +1,25 @@
+# NOISE MODELS FOR SKA/MEERKAT RECEIVERS
+import numpy as np
+
+def TsysSKA(m, hits,dv=0.87890625e6):
+
+    # red book estimates, in K
+    Trx = 7.5 
+    Tcmb= 2.73
+    Tspl= 3.
+
+    tsys = (m+Trx + Tcmb + Tspl)#/np.sqrt(dv*hits)
+    rms  = tsys/np.sqrt(dv*hits[None,:])
+    return np.random.normal(scale=rms,loc=tsys)
+
+def TsysMeerkat(m, hits,dv=0.87890625e6):
+
+    # From SKA Science Performance booklet, Oct 2017
+    nu = np.linspace(0.95,1.4,1000)
+    Trx = np.mean(7.5 + 6.8*np.abs(nu-1.65)**1.5)
+    Tcmb= 2.73
+    Tspl= 3.
+
+    tsys = (m+Trx + Tcmb + Tspl)
+    rms  = tsys/np.sqrt(dv*hits[None,:])
+    return np.random.normal(scale=rms,loc=tsys)
