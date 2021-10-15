@@ -147,12 +147,16 @@ def generate(nside, ffp10loc, vstart, vend, space, freeind=-2.13, smax=0.1, psbe
             del h['PSM']
         grp = h.create_group('PSM')
         
-        grp.create_dataset('Model_Sky', data= syncmap + freemap + psmap)
+        total_map = syncmap + freemap + psmap
+        grp.create_dataset('Model_Sky', data= total_map)
         grp.create_dataset('Frequency', data = freqs)
         grp.create_dataset('Model_Sky_Offsets', data = tpsmean)
         grp.create_dataset('Synchrotron',data=syncmap)
         grp.create_dataset('FreeFree',data=freemap)
         grp.create_dataset('PointSouces',data=psmap)
+
+        monopole = np.argmin(total_map,axis=1)
+        dset = grp.create_dataset('Monopole', data=monopole)
 
         if 'Components' in grp:
             components = grp['Components']
@@ -178,19 +182,30 @@ def generate(nside, ffp10loc, vstart, vend, space, freeind=-2.13, smax=0.1, psbe
 
         np.random.seed(0)
 
+        h = h5py.File(f'{output_dir}/SkyModels.hd5','a')
+        if 'MS05' in h:
+            del h['MS05']
+        grp = h.create_group('MS05')
+
+
         total_map = np.zeros((freqs.size, 12*nside**2))
         for mode in ['sync','free','ps','egfree']:
             cl, spectrum = gen_cl(vbins[:-1], vbins[1:], els, mode)
             fg_map = hp.synfast(cl, nside, verbose=False)
-            #hp.mollview(fg_map,title=mode)
-            #pyplot.show()
+            dset = grp.create_dataset(mode, data=fg_map)
+            dset.attrs['Unit'] = 'K'
             for i in range(freqs.size):
-                total_map[i,:] += (fg_map*spectrum[i] + 16 * (408./freqs[i])**2.7)
-            #syncmap = fg_map[None,:]*spectrum[:,None]
-            #syncmap = np.array([fg_map*spectrum[ii] for ii in range(len(vbins) - 1)])
-            # total_map += syncmap
-            pyf.writeto('sky_models/{}mapMS.fits'.format(mode), fg_map,overwrite=True)
-        pyf.writeto('sky_models/totalfluxMS.fits',total_map,overwrite=True)
+                total_map[i,:] += fg_map*spectrum[i]
+
+        monopole =  16 * (408./freqs)**2.7 * 4 
+        dset = grp.create_dataset('Monopole', data=monopole)
+
+        total_map = total_map + monopole[:,None]
+        dset = grp.create_dataset('Total', data=total_map)
+        dset.attrs['Unit'] = 'K'
+
+            #pyf.writeto('sky_models/{}mapMS.fits'.format(mode), fg_map,overwrite=True)
+        #pyf.writeto('sky_models/totalfluxMS.fits',total_map,overwrite=True)
 
     return None
 
