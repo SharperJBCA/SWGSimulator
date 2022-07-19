@@ -21,8 +21,11 @@ def planckcorr(freq_ghz):
 
     return correction
 
-def gen_cl(vbit1, vbit2, ell, fgtype):
-    """ Produce Cl's in K^2 for Gaussian realisations of different foregrounds """
+def gen_cl(vmid, ell, fgtype):
+    """ Produce Cl's in K^2 for Gaussian realisations of different foregrounds
+    
+    Spectrum is returned in pixel-space (expects units of K not K^2)
+    """
 
     l_ref = 1000
     v_ref = 130
@@ -56,7 +59,9 @@ def gen_cl(vbit1, vbit2, ell, fgtype):
     # * np.exp(-((np.log(vbit1 / vbit2))**2 / (2 * xival**2)))
     cl[0] = cl[1]
 
-    spectrum = (v_ref**2 / (vbit1 * vbit2))**alpha #* np.exp(-((np.log(vbit1 / vbit2))**2 / (2 * xival**2)))
+    spectrum = (v_ref/vmid)**alpha
+
+    #(v_ref**2 / (vbit1 * vbit2))**alpha #* np.exp(-((np.log(vbit1 / vbit2))**2 / (2 * xival**2)))
     #cl = aval * (l_ref / ell)**bval * (v_ref**2 / (vbit1 * vbit2))**alpha * \
     #     np.exp(-((np.log(vbit1 / vbit2))**2 / (2 * xival**2)))
     return cl, spectrum
@@ -197,7 +202,7 @@ def generate(nside, ffp10loc, vstart, vend, space, freeind=-2.13, smax=0.1, psbe
             for i in range(freqs.size):
                 total_map[i,:] += fg_map*spectrum[i]
 
-        monopole =  16 * (408./freqs)**2.7 * 4 
+        monopole =  16 * (408./freqs)**2.7
         dset = grp.create_dataset('Monopole', data=monopole)
 
         total_map = total_map + monopole[:,None]
