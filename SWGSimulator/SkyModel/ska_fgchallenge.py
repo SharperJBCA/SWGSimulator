@@ -184,7 +184,6 @@ def generate(nside, ffp10loc, vstart, vend, space, freeind=-2.13, smax=0.1, psbe
         deltav = freqs[1] - freqs[0]
         vbins = freqs - deltav/2
         vbins = freq_edges #np.append(vbins, freqs[-1]+deltav/2)
-
         np.random.seed(0)
 
         h = h5py.File(f'{output_dir}/SkyModels.hd5','a')
@@ -195,7 +194,7 @@ def generate(nside, ffp10loc, vstart, vend, space, freeind=-2.13, smax=0.1, psbe
 
         total_map = np.zeros((freqs.size, 12*nside**2))
         for mode in ['sync','free','ps','egfree']:
-            cl, spectrum = gen_cl(vbins[:-1], vbins[1:], els, mode)
+            cl, spectrum = gen_cl(freqs, els, mode)
             fg_map = hp.synfast(cl, nside, verbose=False)
             dset = grp.create_dataset(mode, data=fg_map)
             dset.attrs['Unit'] = 'K'
